@@ -1,13 +1,5 @@
 <?php
-// Configuración de la base de datos
-$host = "localhost";
-$dbname = "drive";
-$username = "root";
-$password = "";
-
-// Conectar a MySQL
-$conn = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
-$conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+require_once 'config.php'; // Archivo de configuración con conexión a la base de datos
 
 $currentFolder = isset($_GET['folder']) ? $_GET['folder'] : '';
 
