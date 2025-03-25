@@ -1,18 +1,15 @@
 <?php
-// Detectar si estamos en localhost o en un servidor
-if ($_SERVER['HTTP_HOST'] === 'localhost' || $_SERVER['HTTP_HOST'] === '127.0.0.1') {
-    $environment = 'development';
-} else {
-    $environment = 'production';
-}
+// Detectar si estamos en localhost o en un servidor en línea
+$serverName = $_SERVER['SERVER_NAME'] ?? 'localhost';
+$isLocalhost = in_array($serverName, ['localhost', '127.0.0.1']);
 
-// Configuración de conexión según el entorno
+// Configuración de conexión según el entorno detectado
 $config = [
     'development' => [
         'host' => 'localhost',
         'dbname' => 'drive',
-        'username' => 'root',  // ⚠️ Asegúrate de que este usuario existe en tu MySQL local
-        'password' => '',      // ⚠️ Si tu MySQL local tiene contraseña, agrégala aquí
+        'username' => 'root',  // ⚠️ Cambia si tu entorno local usa otro usuario
+        'password' => '',      // ⚠️ Si MySQL local tiene contraseña, agrégala aquí
     ],
     'production' => [
         'host' => 'localhost',
@@ -22,10 +19,10 @@ $config = [
     ]
 ];
 
-// Obtener la configuración actual
-$dbConfig = $config[$environment];
+// Seleccionar configuración automáticamente
+$dbConfig = $isLocalhost ? $config['development'] : $config['production'];
 
-// Conectar a MySQL
+// Conectar a MySQL con PDO
 try {
     $conn = new PDO(
         "mysql:host={$dbConfig['host']};dbname={$dbConfig['dbname']};charset=utf8",
@@ -34,6 +31,6 @@ try {
     );
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch (PDOException $e) {
-    die("Error de conexión en $environment: " . $e->getMessage());
+    die("Error de conexión en " . ($isLocalhost ? 'desarrollo' : 'producción') . ": " . $e->getMessage());
 }
 ?>
