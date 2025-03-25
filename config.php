@@ -1,6 +1,6 @@
 <?php
 // Determinar el entorno (cambia a 'production' en el servidor)
-$environment = 'development'; 
+$environment = 'production'; 
 
 // Configuración de conexión según el entorno
 $config = [
