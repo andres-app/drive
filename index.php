@@ -10,7 +10,6 @@ if (!isset($_SESSION['user_id'])) {
 $userId = $_SESSION['user_id'];
 $currentFolder = isset($_GET['folder']) ? $_GET['folder'] : '';
 
-// Crear carpeta
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["new_folder"])) {
     $folderName = trim($_POST["new_folder"]);
     if (!empty($folderName)) {
@@ -21,7 +20,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["new_folder"])) {
     exit();
 }
 
-// Subir múltiples archivos
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_FILES["files"])) {
     $uploadDir = "uploads/" . ($currentFolder ? $currentFolder . '/' : '');
 
@@ -43,13 +41,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_FILES["files"])) {
     exit();
 }
 
-// Obtener archivos del usuario
 $stmt = $conn->prepare("SELECT * FROM files WHERE folder = ? AND user_id = ? ORDER BY size = 0 DESC, name ASC");
 $stmt->execute([$currentFolder, $userId]);
 $files = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 function getFileIcon($fileName) {
     $extension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
-
     $icons = [
         'pdf' => 'https://cdn-icons-png.flaticon.com/512/337/337946.png',
         'doc' => 'https://cdn-icons-png.flaticon.com/512/732/732052.png',
@@ -68,24 +65,23 @@ function getFileIcon($fileName) {
         'mp4' => 'https://cdn-icons-png.flaticon.com/512/1179/1179069.png',
         'mp3' => 'https://cdn-icons-png.flaticon.com/512/727/727245.png',
     ];
-
-    return $icons[$extension] ?? 'https://cdn-icons-png.flaticon.com/512/833/833524.png'; // icono por defecto
+    return $icons[$extension] ?? 'https://cdn-icons-png.flaticon.com/512/833/833524.png';
 }
 ?>
-
 
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <title>Mi Drive</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <style>
         body { background-color: #121212; color: white; }
         .container { max-width: 1200px; }
         .grid-container {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
             gap: 15px; margin-top: 20px;
         }
         .grid-item {
@@ -111,26 +107,32 @@ function getFileIcon($fileName) {
         }
         .btn-dark { background-color: #333; border: none; }
         .btn-dark:hover { background-color: #444; }
+
+        @media (max-width: 400px) {
+            .grid-container {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
 <div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>📂 Mi Drive</h2>
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 gap-2">
+        <h2 class="m-0">📂 Mi Drive</h2>
         <div>
             <span>👤 <?php echo htmlspecialchars($_SESSION['username']); ?></span>
             <a href="logout.php" class="btn btn-sm btn-warning ms-2">Cerrar sesión</a>
         </div>
     </div>
 
-    <div class="d-flex justify-content-between">
-        <form method="POST" class="mb-3">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-stretch gap-2">
+        <form method="POST" class="flex-fill mb-3">
             <div class="input-group">
                 <input type="text" name="new_folder" class="form-control" placeholder="Nueva carpeta" required>
                 <button type="submit" class="btn btn-dark">Crear</button>
             </div>
         </form>
-        <form method="POST" enctype="multipart/form-data" class="mb-3">
+        <form method="POST" enctype="multipart/form-data" class="flex-fill mb-3">
             <div class="input-group">
                 <input type="file" name="files[]" class="form-control" multiple required>
                 <button type="submit" class="btn btn-dark">Subir</button>
