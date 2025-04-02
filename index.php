@@ -45,7 +45,8 @@ $stmt = $conn->prepare("SELECT * FROM files WHERE folder = ? AND user_id = ? ORD
 $stmt->execute([$currentFolder, $userId]);
 $files = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-function getFileIcon($fileName) {
+function getFileIcon($fileName)
+{
     $extension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
     $icons = [
         'pdf' => 'https://cdn-icons-png.flaticon.com/512/337/337946.png',
@@ -71,91 +72,141 @@ function getFileIcon($fileName) {
 
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <title>Mi Drive</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <style>
-        body { background-color: #121212; color: white; }
-        .container { max-width: 1200px; }
+        body {
+            background-color: #f4f7fa;
+            color: #333;
+        }
+
+        .sidebar {
+            width: 250px;
+            height: 100vh;
+            background-color: #1a3c66;
+            color: white;
+            position: fixed;
+            top: 0;
+            left: 0;
+            padding: 2rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .sidebar h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .sidebar form .btn {
+            background-color: #ffc107;
+            color: #1a3c66;
+            font-weight: bold;
+            border: none;
+        }
+
+        .sidebar form .btn:hover {
+            background-color: #e0a800;
+            color: white;
+        }
+
+        .sidebar form input {
+            margin-bottom: 0.5rem;
+        }
+
+        .main-content {
+            margin-left: 270px;
+            padding: 2rem;
+        }
+
         .grid-container {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-            gap: 15px; margin-top: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
         }
+
         .grid-item {
-            background-color: #1e1e1e;
-            padding: 15px; border-radius: 8px;
-            text-align: center; transition: 0.3s;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            text-align: center;
+            padding: 20px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
+
         .grid-item:hover {
-            background-color: #292929;
-            transform: scale(1.05);
+            transform: scale(1.03);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
         }
+
         .grid-item a {
             text-decoration: none;
-            color: white;
+            color: #333;
             display: flex;
             flex-direction: column;
             align-items: center;
+            gap: 10px;
         }
+
         .grid-item img {
             width: 60px;
             height: 60px;
-            margin-bottom: 10px;
+            object-fit: contain;
         }
-        .btn-dark { background-color: #333; border: none; }
-        .btn-dark:hover { background-color: #444; }
 
-        @media (max-width: 400px) {
-            .grid-container {
-                grid-template-columns: 1fr;
-            }
+        .btn-warning {
+            background-color: #ffc107;
+            border: none;
+        }
+
+        .btn-warning:hover {
+            background-color: #e0a800;
         }
     </style>
 </head>
+
 <body>
-<div class="container py-4">
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 gap-2">
-        <h2 class="m-0">📂 Mi Drive</h2>
-        <div>
-            <span>👤 <?php echo htmlspecialchars($_SESSION['username']); ?></span>
-            <a href="logout.php" class="btn btn-sm btn-warning ms-2">Cerrar sesión</a>
+    <div class="sidebar">
+        <h2>📂 Mi Drive</h2>
+        <form method="POST">
+            <input type="text" name="new_folder" class="form-control" placeholder="Nueva carpeta" required>
+            <button type="submit" class="btn btn-sm w-100">Crear</button>
+        </form>
+        <form method="POST" enctype="multipart/form-data">
+            <input type="file" name="files[]" class="form-control" multiple required>
+            <button type="submit" class="btn btn-sm w-100">Subir</button>
+        </form>
+        <div class="mt-auto">
+            <hr class="bg-light">
+            <p class="mb-1">👤 <?php echo htmlspecialchars($_SESSION['username']); ?></p>
+            <a href="logout.php" class="btn btn-sm btn-warning mt-1 w-100">Cerrar sesión</a>
         </div>
     </div>
 
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-stretch gap-2">
-        <form method="POST" class="flex-fill mb-3">
-            <div class="input-group">
-                <input type="text" name="new_folder" class="form-control" placeholder="Nueva carpeta" required>
-                <button type="submit" class="btn btn-dark">Crear</button>
-            </div>
-        </form>
-        <form method="POST" enctype="multipart/form-data" class="flex-fill mb-3">
-            <div class="input-group">
-                <input type="file" name="files[]" class="form-control" multiple required>
-                <button type="submit" class="btn btn-dark">Subir</button>
-            </div>
-        </form>
-    </div>
+    <div class="main-content">
+        <?php if ($currentFolder): ?>
+            <a href="?folder=" class="btn btn-warning mb-3">⬅ Volver</a>
+        <?php endif; ?>
 
-    <?php if ($currentFolder): ?>
-        <a href="?folder=" class="btn btn-warning mb-3">⬅ Volver</a>
-    <?php endif; ?>
-
-    <div class="grid-container">
-        <?php foreach ($files as $file): ?>
-            <div class="grid-item">
-                <a href="<?php echo $file['size'] == 0 ? '?folder=' . urlencode($file['name']) : htmlspecialchars($file['path']); ?>">
-                    <img src="<?php echo $file['size'] == 0
-                        ? 'https://cdn-icons-png.flaticon.com/512/3767/3767084.png'
-                        : getFileIcon($file['name']); ?>" alt="icono">
-                    <strong><?php echo htmlspecialchars($file['name']); ?></strong>
-                </a>
-            </div>
-        <?php endforeach; ?>
+        <div class="grid-container">
+            <?php foreach ($files as $file): ?>
+                <div class="grid-item">
+                    <a href="<?php echo $file['size'] == 0 ? '?folder=' . urlencode($file['name']) : htmlspecialchars($file['path']); ?>">
+                        <img src="<?php echo $file['size'] == 0
+                                        ? 'https://cdn-icons-png.flaticon.com/512/3767/3767084.png'
+                                        : getFileIcon($file['name']); ?>" alt="icono">
+                        <strong><?php echo htmlspecialchars($file['name']); ?></strong>
+                    </a>
+                </div>
+            <?php endforeach; ?>
+        </div>
     </div>
-</div>
 </body>
+
 </html>
