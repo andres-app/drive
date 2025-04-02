@@ -80,15 +80,15 @@ function getFileIcon($fileName)
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <style>
         body {
-            background-color: #f4f7fa;
-            color: #333;
+            background-color: #f9fbfc;
+            color: #444;
         }
 
         .sidebar {
             width: 250px;
             height: 100vh;
-            background-color: #1a3c66;
-            color: white;
+            background-color: #e3f2fd;
+            color: #0d47a1;
             position: fixed;
             top: 0;
             left: 0;
@@ -96,6 +96,7 @@ function getFileIcon($fileName)
             display: flex;
             flex-direction: column;
             gap: 1.5rem;
+            border-right: 1px solid #bbdefb;
         }
 
         .sidebar h2 {
@@ -103,20 +104,20 @@ function getFileIcon($fileName)
             margin-bottom: 1rem;
         }
 
+        .sidebar form .form-control {
+            margin-bottom: 0.5rem;
+        }
+
         .sidebar form .btn {
-            background-color: #ffc107;
-            color: #1a3c66;
+            background-color: #90caf9;
+            color: #0d47a1;
             font-weight: bold;
             border: none;
         }
 
         .sidebar form .btn:hover {
-            background-color: #e0a800;
+            background-color: #64b5f6;
             color: white;
-        }
-
-        .sidebar form input {
-            margin-bottom: 0.5rem;
         }
 
         .main-content {
@@ -132,9 +133,9 @@ function getFileIcon($fileName)
         }
 
         .grid-item {
-            background-color: white;
+            background-color: #ffffff;
             border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
             text-align: center;
             padding: 20px;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -142,7 +143,7 @@ function getFileIcon($fileName)
 
         .grid-item:hover {
             transform: scale(1.03);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
         }
 
         .grid-item a {
@@ -161,12 +162,13 @@ function getFileIcon($fileName)
         }
 
         .btn-warning {
-            background-color: #ffc107;
+            background-color: #ffecb3;
+            color: #6d4c41;
             border: none;
         }
 
         .btn-warning:hover {
-            background-color: #e0a800;
+            background-color: #ffe082;
         }
     </style>
 </head>
@@ -174,13 +176,13 @@ function getFileIcon($fileName)
 <body>
     <div class="sidebar">
         <h2>📂 Mi Drive</h2>
-        <form method="POST">
+        <form method="POST" class="d-flex align-items-center gap-2">
             <input type="text" name="new_folder" class="form-control" placeholder="Nueva carpeta" required>
-            <button type="submit" class="btn btn-sm w-100">Crear</button>
+            <button type="submit" class="btn btn-sm">+</button>
         </form>
         <form method="POST" enctype="multipart/form-data">
-            <input type="file" name="files[]" class="form-control" multiple required>
-            <button type="submit" class="btn btn-sm w-100">Subir</button>
+            <input type="file" name="files[]" class="form-control mb-2" multiple required>
+            <button type="submit" class="btn btn-sm w-100">Subir archivo</button>
         </form>
         <div class="mt-auto">
             <hr class="bg-light">
