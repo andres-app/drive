@@ -176,10 +176,12 @@ function getFileIcon($fileName)
 <body>
     <div class="sidebar">
         <h2>📂 Mi Drive</h2>
-        <form method="POST" class="d-flex align-items-center gap-2">
-            <input type="text" name="new_folder" class="form-control" placeholder="Nueva carpeta" required>
-            <button type="submit" class="btn btn-sm">+</button>
-        </form>
+        <div class="d-flex justify-content-center">
+    <form method="POST" class="d-flex align-items-center gap-2 w-100">
+        <input type="text" name="new_folder" class="form-control" placeholder="Nueva carpeta" required>
+        <button type="submit" class="btn btn-sm d-flex align-items-center justify-content-center" style="height: 100%; aspect-ratio: 1 / 1; padding: 0;">+</button>
+    </form>
+</div>
         <form method="POST" enctype="multipart/form-data">
             <input type="file" name="files[]" class="form-control mb-2" multiple required>
             <button type="submit" class="btn btn-sm w-100">Subir archivo</button>
