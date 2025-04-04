@@ -108,10 +108,6 @@ function getFileIcon($fileName)
 }
 ?>
 
-
-
-
-
 <!DOCTYPE html>
 <html lang="es">
 
@@ -183,6 +179,7 @@ function getFileIcon($fileName)
             text-align: center;
             padding: 20px;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
+            position: relative;
         }
 
         .grid-item:hover {
@@ -203,6 +200,28 @@ function getFileIcon($fileName)
             width: 60px;
             height: 60px;
             object-fit: contain;
+        }
+
+        .tooltip-upload-date {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s;
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            z-index: 10;
+        }
+
+        .grid-item.hover-delay .tooltip-upload-date {
+            visibility: visible;
+            opacity: 1;
         }
 
         .btn-warning {
@@ -241,7 +260,10 @@ function getFileIcon($fileName)
 
         <div class="grid-container">
             <?php foreach ($files as $file): ?>
-                <div class="grid-item">
+                <div class="grid-item" onmouseenter="startTooltipDelay(this)" onmouseleave="clearTooltipDelay(this)">
+                    <div class="tooltip-upload-date">
+                        Subido el: <?php echo date('d/m/Y H:i', strtotime($file['created_at'] ?? 'now')); ?>
+                    </div>
                     <a href="<?php echo $file['size'] == 0 ? '?folder=' . urlencode($file['name']) : htmlspecialchars($file['path']); ?>">
                         <img src="<?php echo $file['size'] == 0
                                         ? 'https://cdn-icons-png.flaticon.com/512/3767/3767084.png'
@@ -276,6 +298,20 @@ function getFileIcon($fileName)
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let tooltipTimer;
+
+        function startTooltipDelay(element) {
+            tooltipTimer = setTimeout(() => {
+                element.classList.add('hover-delay');
+            }, 1000); // 1 segundos
+        }
+
+        function clearTooltipDelay(element) {
+            clearTimeout(tooltipTimer);
+            element.classList.remove('hover-delay');
+        }
+    </script>
 </body>
 
 </html>
