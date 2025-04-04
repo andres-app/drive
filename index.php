@@ -30,13 +30,51 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_FILES["files"])) {
     foreach ($_FILES["files"]["name"] as $key => $fileName) {
         $fileTmp = $_FILES["files"]["tmp_name"][$key];
         $fileSize = $_FILES["files"]["size"][$key];
-        $filePath = $uploadDir . basename($fileName);
 
-        if (move_uploaded_file($fileTmp, $filePath)) {
-            $stmt = $conn->prepare("INSERT INTO files (name, path, size, folder, user_id) VALUES (?, ?, ?, ?, ?)");
-            $stmt->execute([$fileName, $filePath, $fileSize, $currentFolder, $userId]);
+        $relativePath = $_FILES["files"]["name"][$key];
+        $relativePath = str_replace(['../', './'], '', $relativePath);
+        $fullPath = $uploadDir . $relativePath;
+        $folderPath = dirname($relativePath);
+
+        if (!empty($folderPath)) {
+            $segments = explode('/', $folderPath);
+            $parent = $currentFolder;
+            $pathBuilder = $uploadDir;
+
+            foreach ($segments as $folder) {
+                $pathBuilder .= $folder . '/';
+                if (!is_dir($pathBuilder)) {
+                    mkdir($pathBuilder, 0777, true);
+                }
+                $stmtCheck = $conn->prepare("SELECT COUNT(*) FROM files WHERE name = ? AND folder = ? AND user_id = ? AND size = 0");
+                $stmtCheck->execute([$folder, $parent, $userId]);
+                $exists = $stmtCheck->fetchColumn();
+
+                if (!$exists) {
+                    $stmtInsert = $conn->prepare("INSERT INTO files (name, path, size, folder, user_id) VALUES (?, '', 0, ?, ?)");
+                    $stmtInsert->execute([$folder, $parent, $userId]);
+                }
+                $parent = $folder;
+            }
+        }
+
+        $finalFolder = basename($folderPath);
+        if ($finalFolder === '.' || $finalFolder === '') {
+            $finalFolder = $currentFolder;
+        }
+
+        if (is_uploaded_file($fileTmp)) {
+            if (!is_dir(dirname($fullPath))) {
+                mkdir(dirname($fullPath), 0777, true);
+            }
+
+            if (move_uploaded_file($fileTmp, $fullPath)) {
+                $stmt = $conn->prepare("INSERT INTO files (name, path, size, folder, user_id) VALUES (?, ?, ?, ?, ?)");
+                $stmt->execute([basename($fileName), $fullPath, $fileSize, $finalFolder, $userId]);
+            }
         }
     }
+
     header("Location: ?folder=$currentFolder");
     exit();
 }
@@ -69,6 +107,10 @@ function getFileIcon($fileName)
     return $icons[$extension] ?? 'https://cdn-icons-png.flaticon.com/512/833/833524.png';
 }
 ?>
+
+
+
+
 
 <!DOCTYPE html>
 <html lang="es">
@@ -108,14 +150,16 @@ function getFileIcon($fileName)
             margin-bottom: 0.5rem;
         }
 
-        .sidebar form .btn {
+        .sidebar form .btn,
+        .modal-option {
             background-color: #90caf9;
             color: #0d47a1;
             font-weight: bold;
             border: none;
         }
 
-        .sidebar form .btn:hover {
+        .sidebar form .btn:hover,
+        .modal-option:hover {
             background-color: #64b5f6;
             color: white;
         }
@@ -177,15 +221,12 @@ function getFileIcon($fileName)
     <div class="sidebar">
         <h2>📂 Mi Drive</h2>
         <div class="d-flex justify-content-center">
-    <form method="POST" class="d-flex align-items-center gap-2 w-100">
-        <input type="text" name="new_folder" class="form-control" placeholder="Nueva carpeta" required>
-        <button type="submit" class="btn btn-sm d-flex align-items-center justify-content-center" style="height: 100%; aspect-ratio: 1 / 1; padding: 0;">+</button>
-    </form>
-</div>
-        <form method="POST" enctype="multipart/form-data">
-            <input type="file" name="files[]" class="form-control mb-2" multiple required>
-            <button type="submit" class="btn btn-sm w-100">Subir archivo</button>
-        </form>
+            <form method="POST" class="d-flex align-items-center gap-2 w-100">
+                <input type="text" name="new_folder" class="form-control" placeholder="Nueva carpeta" required>
+                <button type="submit" class="btn btn-sm d-flex align-items-center justify-content-center" style="height: 100%; aspect-ratio: 1 / 1; padding: 0;">+</button>
+            </form>
+        </div>
+        <button type="button" class="btn btn-sm w-100 modal-option" data-bs-toggle="modal" data-bs-target="#uploadModal">📄 Subir archivo</button>
         <div class="mt-auto">
             <hr class="bg-light">
             <p class="mb-1">👤 <?php echo htmlspecialchars($_SESSION['username']); ?></p>
@@ -211,6 +252,30 @@ function getFileIcon($fileName)
             <?php endforeach; ?>
         </div>
     </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="uploadModalLabel">Selecciona una opción</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body d-flex flex-column gap-2">
+                    <form method="POST" enctype="multipart/form-data">
+                        <input type="file" name="files[]" id="uploadFiles" class="d-none" multiple onchange="this.form.submit()">
+                        <label for="uploadFiles" class="modal-option btn w-100 text-start">📄 Subir archivo</label>
+                    </form>
+                    <form method="POST" enctype="multipart/form-data">
+                        <input type="file" name="files[]" id="uploadFolder" class="d-none" webkitdirectory directory multiple onchange="this.form.submit()">
+                        <label for="uploadFolder" class="modal-option btn w-100 text-start">📁 Subir carpeta</label>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>

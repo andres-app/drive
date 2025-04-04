@@ -1,0 +1,42 @@
+CREACION DE SALAS ZOOM TICKET DE REFERENCIA 30238
+
+=======SALA 01=======
+salainpe1@inpe.gob.pe
+Inpe2022$$$
+=====================
+
+=======SALA 02=======
+salainpe2@inpe.gob.pe
+Inpe2022$$$
+=====================
+
+=======SALA 03=======
+salainpe3@inpe.gob.pe
+Inpe2022$$$
+=====================
+
+=======SALA 04=======
+salainpe4@inpe.gob.pe
+Inpe2022$$$
+=====================
+
+=======SALA 05=======
+salainpe5@inpe.gob.pe
+ 
+=====================
+
+=======SALA 06=======
+salainpe6@inpe.gob.pe
+Inpe2022$$$
+=====================
+
+=======SALA 07=======
+salainpe7@inpe.gob.pe
+Inpe2022$$$
+=====================
+
+=======SALA 08=======
+salainpe8@inpe.gob.pe
+Inpe2022$$$
+=====================
+
