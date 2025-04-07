@@ -79,7 +79,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_FILES["files"])) {
     exit();
 }
 
-$stmt = $conn->prepare("SELECT * FROM files WHERE folder = ? AND user_id = ? ORDER BY size = 0 DESC, name ASC");
+$stmt = $conn->prepare("SELECT * FROM files WHERE folder = ? AND user_id = ? AND activo = 1 ORDER BY size = 0 DESC, name ASC");
 $stmt->execute([$currentFolder, $userId]);
 $files = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -292,7 +292,9 @@ function getFileIcon($fileName)
 
     <div id="contextMenu" class="position-absolute bg-white border rounded shadow-sm p-2 d-none" style="z-index: 999;">
         <button class="btn btn-sm w-100 text-start" onclick="renameItem()">✏️ Renombrar</button>
+        <button class="btn btn-sm w-100 text-start text-danger" onclick="deleteItem()">🗑 Eliminar</button>
     </div>
+
 
 
     <!-- Modal -->
@@ -395,6 +397,27 @@ function getFileIcon($fileName)
             newFileNameInput.value = oldName;
             renameModal.show();
         }
+
+        function deleteItem() {
+            const fileId = selectedItem.getAttribute("data-id");
+
+            if (confirm("¿Seguro que quieres eliminar este elemento?")) {
+                const formData = new FormData();
+                formData.append("delete_id", fileId);
+
+                fetch("delete.php", {
+                    method: "POST",
+                    body: formData
+                }).then(response => {
+                    if (response.ok) {
+                        window.location.reload();
+                    } else {
+                        alert("Error al eliminar.");
+                    }
+                });
+            }
+        }
+
 
         // Enviar datos al backend al guardar cambios
         renameForm.addEventListener("submit", function(e) {
