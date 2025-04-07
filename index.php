@@ -233,6 +233,14 @@ function getFileIcon($fileName)
         .btn-warning:hover {
             background-color: #ffe082;
         }
+
+        .file-name {
+            max-width: 100%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: block;
+        }
     </style>
 </head>
 
@@ -262,13 +270,16 @@ function getFileIcon($fileName)
             <?php foreach ($files as $file): ?>
                 <div class="grid-item" onmouseenter="startTooltipDelay(this)" onmouseleave="clearTooltipDelay(this)">
                     <div class="tooltip-upload-date">
-                        Subido el: <?php echo date('d/m/Y H:i', strtotime($file['created_at'] ?? 'now')); ?>
+                        <div><strong><?php echo htmlspecialchars($file['name']); ?></strong></div>
+                        <div>Subido el: <?php echo date('d/m/Y H:i', strtotime($file['created_at'] ?? 'now')); ?></div>
                     </div>
+
                     <a href="<?php echo $file['size'] == 0 ? '?folder=' . urlencode($file['name']) : htmlspecialchars($file['path']); ?>">
                         <img src="<?php echo $file['size'] == 0
                                         ? 'https://cdn-icons-png.flaticon.com/512/3767/3767084.png'
                                         : getFileIcon($file['name']); ?>" alt="icono">
-                        <strong><?php echo htmlspecialchars($file['name']); ?></strong>
+                        <strong class="file-name"><?php echo htmlspecialchars($file['name']); ?></strong>
+
                     </a>
                 </div>
             <?php endforeach; ?>
