@@ -399,10 +399,27 @@ function getFileIcon($fileName)
         // Enviar datos al backend al guardar cambios
         renameForm.addEventListener("submit", function(e) {
             e.preventDefault();
+
             const fileId = renameIdInput.value;
-            const newName = newFileNameInput.value.trim();
+            let newName = newFileNameInput.value.trim();
 
             if (!newName) return;
+
+            const fileNameElement = selectedItem.querySelector(".file-name");
+            const oldName = fileNameElement.textContent.trim();
+
+            // Validar extensión si es archivo (tiene punto y no empieza con punto)
+            const hasExtension = oldName.includes('.') && !oldName.startsWith('.');
+            if (hasExtension) {
+                const oldExt = oldName.split('.').pop().toLowerCase();
+                const newExt = newName.includes('.') ? newName.split('.').pop().toLowerCase() : '';
+
+                if (newExt !== oldExt) {
+                    // Si el usuario quitó o cambió la extensión, la corregimos
+                    const baseName = newName.split('.')[0];
+                    newName = baseName + '.' + oldExt;
+                }
+            }
 
             const formData = new FormData();
             formData.append("rename_id", fileId);
