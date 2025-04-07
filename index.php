@@ -241,6 +241,10 @@ function getFileIcon($fileName)
             text-overflow: ellipsis;
             display: block;
         }
+
+        #contextMenu {
+            width: 150px;
+        }
     </style>
 </head>
 
@@ -268,7 +272,7 @@ function getFileIcon($fileName)
 
         <div class="grid-container">
             <?php foreach ($files as $file): ?>
-                <div class="grid-item" onmouseenter="startTooltipDelay(this)" onmouseleave="clearTooltipDelay(this)">
+                <div class="grid-item" data-id="<?= $file['id'] ?>" onmouseenter="startTooltipDelay(this)" onmouseleave="clearTooltipDelay(this)">
                     <div class="tooltip-upload-date">
                         <div><strong><?php echo htmlspecialchars($file['name']); ?></strong></div>
                         <div>Subido el: <?php echo date('d/m/Y H:i', strtotime($file['created_at'] ?? 'now')); ?></div>
@@ -285,6 +289,11 @@ function getFileIcon($fileName)
             <?php endforeach; ?>
         </div>
     </div>
+
+    <div id="contextMenu" class="position-absolute bg-white border rounded shadow-sm p-2 d-none" style="z-index: 999;">
+        <button class="btn btn-sm w-100 text-start" onclick="renameItem()">✏️ Renombrar</button>
+    </div>
+
 
     <!-- Modal -->
     <div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
@@ -321,6 +330,49 @@ function getFileIcon($fileName)
         function clearTooltipDelay(element) {
             clearTimeout(tooltipTimer);
             element.classList.remove('hover-delay');
+        }
+
+        let contextMenu = document.getElementById("contextMenu");
+        let selectedItem = null;
+
+        document.addEventListener("contextmenu", function(e) {
+            const item = e.target.closest(".grid-item");
+            if (item) {
+                e.preventDefault();
+                selectedItem = item;
+                contextMenu.style.top = `${e.pageY}px`;
+                contextMenu.style.left = `${e.pageX}px`;
+                contextMenu.classList.remove("d-none");
+            } else {
+                contextMenu.classList.add("d-none");
+            }
+        });
+
+        document.addEventListener("click", function() {
+            contextMenu.classList.add("d-none");
+        });
+
+        function renameItem() {
+            const fileNameElement = selectedItem.querySelector(".file-name");
+            const oldName = fileNameElement.textContent.trim();
+            const newName = prompt("Nuevo nombre:", oldName);
+            if (newName && newName !== oldName) {
+                const fileId = selectedItem.getAttribute("data-id");
+                const formData = new FormData();
+                formData.append("rename_id", fileId);
+                formData.append("new_name", newName);
+
+                fetch("rename.php", {
+                    method: "POST",
+                    body: formData
+                }).then(response => {
+                    if (response.ok) {
+                        window.location.reload();
+                    } else {
+                        alert("Error al renombrar.");
+                    }
+                });
+            }
         }
     </script>
 </body>
