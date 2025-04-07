@@ -259,6 +259,8 @@ function getFileIcon($fileName)
         </div>
         <button type="button" class="btn btn-sm w-100 modal-option" data-bs-toggle="modal" data-bs-target="#uploadModal">📄 Subir archivo</button>
         <div class="mt-auto">
+        <a href="trash.php" class="btn btn-sm btn-outline-danger mt-2 w-100">🗑 Ver papelera</a>
+
             <hr class="bg-light">
             <p class="mb-1">👤 <?php echo htmlspecialchars($_SESSION['username']); ?></p>
             <a href="logout.php" class="btn btn-sm btn-warning mt-1 w-100">Cerrar sesión</a>
