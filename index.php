@@ -317,6 +317,32 @@ function getFileIcon($fileName)
         </div>
     </div>
 
+    <!-- Modal Renombrar -->
+    <div class="modal fade" id="renameModal" tabindex="-1" aria-labelledby="renameModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form id="renameForm">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="renameModalLabel">Renombrar</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="renameId">
+                        <div class="mb-3">
+                            <label for="newFileName" class="form-label">Nuevo nombre</label>
+                            <input type="text" class="form-control" id="newFileName" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         let tooltipTimer;
@@ -324,7 +350,7 @@ function getFileIcon($fileName)
         function startTooltipDelay(element) {
             tooltipTimer = setTimeout(() => {
                 element.classList.add('hover-delay');
-            }, 1000); // 1 segundos
+            }, 1000); // 1 segundo
         }
 
         function clearTooltipDelay(element) {
@@ -335,6 +361,7 @@ function getFileIcon($fileName)
         let contextMenu = document.getElementById("contextMenu");
         let selectedItem = null;
 
+        // Mostrar menú contextual al hacer clic derecho
         document.addEventListener("contextmenu", function(e) {
             const item = e.target.closest(".grid-item");
             if (item) {
@@ -348,33 +375,53 @@ function getFileIcon($fileName)
             }
         });
 
+        // Ocultar menú contextual al hacer clic fuera
         document.addEventListener("click", function() {
             contextMenu.classList.add("d-none");
         });
 
+        // Modal de renombrar
+        let renameModal = new bootstrap.Modal(document.getElementById('renameModal'));
+        const renameForm = document.getElementById("renameForm");
+        const renameIdInput = document.getElementById("renameId");
+        const newFileNameInput = document.getElementById("newFileName");
+
         function renameItem() {
             const fileNameElement = selectedItem.querySelector(".file-name");
             const oldName = fileNameElement.textContent.trim();
-            const newName = prompt("Nuevo nombre:", oldName);
-            if (newName && newName !== oldName) {
-                const fileId = selectedItem.getAttribute("data-id");
-                const formData = new FormData();
-                formData.append("rename_id", fileId);
-                formData.append("new_name", newName);
+            const fileId = selectedItem.getAttribute("data-id");
 
-                fetch("rename.php", {
-                    method: "POST",
-                    body: formData
-                }).then(response => {
-                    if (response.ok) {
-                        window.location.reload();
-                    } else {
-                        alert("Error al renombrar.");
-                    }
-                });
-            }
+            renameIdInput.value = fileId;
+            newFileNameInput.value = oldName;
+            renameModal.show();
         }
+
+        // Enviar datos al backend al guardar cambios
+        renameForm.addEventListener("submit", function(e) {
+            e.preventDefault();
+            const fileId = renameIdInput.value;
+            const newName = newFileNameInput.value.trim();
+
+            if (!newName) return;
+
+            const formData = new FormData();
+            formData.append("rename_id", fileId);
+            formData.append("new_name", newName);
+
+            fetch("rename.php", {
+                method: "POST",
+                body: formData
+            }).then(response => {
+                if (response.ok) {
+                    renameModal.hide();
+                    window.location.reload();
+                } else {
+                    alert("Error al renombrar.");
+                }
+            });
+        });
     </script>
+
 </body>
 
 </html>
