@@ -9,6 +9,9 @@ if (!isset($_SESSION['user_id'])) {
 
 $userId = $_SESSION['user_id'];
 $currentFolder = isset($_GET['folder']) ? $_GET['folder'] : '';
+$type = $_GET['type'] ?? '';
+$fecha = $_GET['fecha'] ?? '';
+
 
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["new_folder"])) {
     $folderName = trim($_POST["new_folder"]);
@@ -100,25 +103,56 @@ function getAllSubfolders($conn, $userId, $parentFolder)
 
 
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+$type = $_GET['type'] ?? '';
+$fecha = $_GET['fecha'] ?? '';
 
 if ($search !== '') {
     $folders = getAllSubfolders($conn, $userId, $currentFolder);
     $placeholders = implode(',', array_fill(0, count($folders), '?'));
-
-    $query = "SELECT * FROM files 
-              WHERE folder IN ($placeholders) 
-              AND user_id = ? 
-              AND activo = 1 
-              AND name LIKE ? 
-              ORDER BY size = 0 DESC, name ASC";
-
+    
+    $conditions = [
+        "folder IN ($placeholders)",
+        "user_id = ?",
+        "activo = 1",
+        "name LIKE ?"
+    ];
+    
     $params = array_merge($folders, [$userId, '%' . $search . '%']);
+    
+    // Filtro por tipo de archivo
+    if ($type === 'image') {
+        $conditions[] = "LOWER(name) REGEXP '\\.(jpg|jpeg|png|gif)$'";
+    }
+    if ($type === 'doc') {
+        $conditions[] = "LOWER(name) REGEXP '\\.(pdf|docx?|xlsx?|pptx?)$'";
+    }
+    if ($type === 'media') {
+        $conditions[] = "LOWER(name) REGEXP '\\.(mp3|mp4|wav|avi)$'";
+    }
+    if ($type === 'folder') {
+        $conditions[] = "size = 0";
+    }
+    
+    // Filtro por fecha
+    if ($fecha === 'hoy') {
+        $conditions[] = "DATE(created_at) = CURDATE()";
+    }
+    if ($fecha === 'semana') {
+        $conditions[] = "YEARWEEK(created_at, 1) = YEARWEEK(CURDATE(), 1)";
+    }
+    if ($fecha === 'mes') {
+        $conditions[] = "MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE())";
+    }
+    
+    $query = "SELECT * FROM files WHERE " . implode(" AND ", $conditions) . " ORDER BY size = 0 DESC, name ASC";
     $stmt = $conn->prepare($query);
     $stmt->execute($params);
+
 } else {
     $stmt = $conn->prepare("SELECT * FROM files WHERE folder = ? AND user_id = ? AND activo = 1 ORDER BY size = 0 DESC, name ASC");
     $stmt->execute([$currentFolder, $userId]);
 }
+
 $files = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 
@@ -310,12 +344,36 @@ function getFileIcon($fileName)
         <?php if ($currentFolder): ?>
             <a href="?folder=" class="btn btn-warning mb-3">⬅ Volver</a>
         <?php endif; ?>
-        <form method="GET" class="mb-4 d-flex gap-2" role="search">
+        <form method="GET" class="mb-4 row g-2 align-items-center" role="search">
             <input type="hidden" name="folder" value="<?= htmlspecialchars($currentFolder) ?>">
-            <input type="text" name="search" class="form-control" placeholder="Buscar archivos o carpetas..." value="<?= htmlspecialchars($search ?? '') ?>">
-            <button type="submit" class="btn btn-outline-primary">🔍 Buscar</button>
-        </form>
 
+            <div class="col-md-4">
+                <input type="text" name="search" class="form-control" placeholder="Buscar archivos o carpetas..." value="<?= htmlspecialchars($search ?? '') ?>">
+            </div>
+
+            <div class="col-md-2">
+                <select name="type" class="form-select">
+                    <option value="">Todos</option>
+                    <option value="image" <?= $_GET['type'] == 'image' ? 'selected' : '' ?>>Imágenes</option>
+                    <option value="doc" <?= $_GET['type'] == 'doc' ? 'selected' : '' ?>>Documentos</option>
+                    <option value="media" <?= $_GET['type'] == 'media' ? 'selected' : '' ?>>Audio/Video</option>
+                    <option value="folder" <?= $_GET['type'] == 'folder' ? 'selected' : '' ?>>Carpetas</option>
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <select name="fecha" class="form-select">
+                    <option value="">Cualquier fecha</option>
+                    <option value="hoy" <?= $_GET['fecha'] == 'hoy' ? 'selected' : '' ?>>Hoy</option>
+                    <option value="semana" <?= $_GET['fecha'] == 'semana' ? 'selected' : '' ?>>Esta semana</option>
+                    <option value="mes" <?= $_GET['fecha'] == 'mes' ? 'selected' : '' ?>>Este mes</option>
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-outline-primary w-100">🔍 Buscar</button>
+            </div>
+        </form>
 
         <div class="grid-container">
             <?php foreach ($files as $file): ?>
@@ -332,6 +390,7 @@ function getFileIcon($fileName)
                         <?php
                         $highlightedName = htmlspecialchars($file['name']);
                         if ($search !== '') {
+                            
                             $highlightedName = preg_replace("/(" . preg_quote($search, '/') . ")/i", '<mark>$1</mark>', $highlightedName);
                         }
                         ?>
