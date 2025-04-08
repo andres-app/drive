@@ -79,9 +79,48 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_FILES["files"])) {
     exit();
 }
 
-$stmt = $conn->prepare("SELECT * FROM files WHERE folder = ? AND user_id = ? AND activo = 1 ORDER BY size = 0 DESC, name ASC");
-$stmt->execute([$currentFolder, $userId]);
+function getAllSubfolders($conn, $userId, $parentFolder)
+{
+    $folders = [$parentFolder];
+    $queue = [$parentFolder];
+
+    while (!empty($queue)) {
+        $current = array_shift($queue);
+        $stmt = $conn->prepare("SELECT name FROM files WHERE folder = ? AND user_id = ? AND size = 0 AND activo = 1");
+        $stmt->execute([$current, $userId]);
+        $results = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        foreach ($results as $sub) {
+            $folders[] = $sub;
+            $queue[] = $sub;
+        }
+    }
+
+    return $folders;
+}
+
+
+$search = isset($_GET['search']) ? trim($_GET['search']) : '';
+
+if ($search !== '') {
+    $folders = getAllSubfolders($conn, $userId, $currentFolder);
+    $placeholders = implode(',', array_fill(0, count($folders), '?'));
+
+    $query = "SELECT * FROM files 
+              WHERE folder IN ($placeholders) 
+              AND user_id = ? 
+              AND activo = 1 
+              AND name LIKE ? 
+              ORDER BY size = 0 DESC, name ASC";
+
+    $params = array_merge($folders, [$userId, '%' . $search . '%']);
+    $stmt = $conn->prepare($query);
+    $stmt->execute($params);
+} else {
+    $stmt = $conn->prepare("SELECT * FROM files WHERE folder = ? AND user_id = ? AND activo = 1 ORDER BY size = 0 DESC, name ASC");
+    $stmt->execute([$currentFolder, $userId]);
+}
 $files = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 
 function getFileIcon($fileName)
 {
@@ -259,7 +298,7 @@ function getFileIcon($fileName)
         </div>
         <button type="button" class="btn btn-sm w-100 modal-option" data-bs-toggle="modal" data-bs-target="#uploadModal">📄 Subir archivo</button>
         <div class="mt-auto">
-        <a href="trash.php" class="btn btn-sm btn-outline-danger mt-2 w-100">🗑 Ver papelera</a>
+            <a href="trash.php" class="btn btn-sm btn-outline-danger mt-2 w-100">🗑 Ver papelera</a>
 
             <hr class="bg-light">
             <p class="mb-1">👤 <?php echo htmlspecialchars($_SESSION['username']); ?></p>
@@ -271,6 +310,12 @@ function getFileIcon($fileName)
         <?php if ($currentFolder): ?>
             <a href="?folder=" class="btn btn-warning mb-3">⬅ Volver</a>
         <?php endif; ?>
+        <form method="GET" class="mb-4 d-flex gap-2" role="search">
+            <input type="hidden" name="folder" value="<?= htmlspecialchars($currentFolder) ?>">
+            <input type="text" name="search" class="form-control" placeholder="Buscar archivos o carpetas..." value="<?= htmlspecialchars($search ?? '') ?>">
+            <button type="submit" class="btn btn-outline-primary">🔍 Buscar</button>
+        </form>
+
 
         <div class="grid-container">
             <?php foreach ($files as $file): ?>
@@ -284,7 +329,14 @@ function getFileIcon($fileName)
                         <img src="<?php echo $file['size'] == 0
                                         ? 'https://cdn-icons-png.flaticon.com/512/3767/3767084.png'
                                         : getFileIcon($file['name']); ?>" alt="icono">
-                        <strong class="file-name"><?php echo htmlspecialchars($file['name']); ?></strong>
+                        <?php
+                        $highlightedName = htmlspecialchars($file['name']);
+                        if ($search !== '') {
+                            $highlightedName = preg_replace("/(" . preg_quote($search, '/') . ")/i", '<mark>$1</mark>', $highlightedName);
+                        }
+                        ?>
+                        <strong class="file-name"><?= $highlightedName ?></strong>
+
 
                     </a>
                 </div>
