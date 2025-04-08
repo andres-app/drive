@@ -43,60 +43,79 @@ function getFileIcon($fileName)
 <head>
     <meta charset="UTF-8">
     <title>Papelera</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 20px;
-            margin-top: 30px;
+        body {
+            background-color: #f8f9fa;
         }
 
-        .grid-item {
-            background-color: #fff8f8;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-            text-align: center;
-            padding: 20px;
-            position: relative;
+        .card {
+            border: none;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
-        .grid-item img {
-            width: 60px;
-            height: 60px;
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
         }
 
-        .restore-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
+        .file-icon {
+            width: 50px;
+            height: 50px;
         }
 
         .file-name {
+            font-weight: 500;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            display: block;
+        }
+
+        .checkbox-top {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+        }
+
+        .card-body {
+            padding-top: 1rem;
         }
     </style>
 </head>
-<body class="p-4">
+<body>
 
-    <a href="index.php" class="btn btn-secondary mb-3">⬅ Volver al inicio</a>
+<div class="container py-4">
+    <a href="index.php" class="btn btn-outline-secondary mb-4">⬅ Volver al inicio</a>
     <h3 class="mb-4">🗑 Archivos en papelera</h3>
 
-    <div class="grid-container">
-        <?php foreach ($deletedFiles as $file): ?>
-            <div class="grid-item">
-                <form method="POST" action="restore.php" class="restore-btn">
-                    <input type="hidden" name="restore_id" value="<?= $file['id'] ?>">
-                    <button type="submit" class="btn btn-sm btn-success">🔄</button>
-                </form>
-                <img src="<?= getFileIcon($file['name']) ?>" alt="icono">
-                <strong class="file-name"><?= htmlspecialchars($file['name']) ?></strong>
-                <div style="font-size: 0.8rem;">Eliminado el: <?= date('d/m/Y H:i', strtotime($file['created_at'])) ?></div>
+    <form method="POST" action="acciones_papelera.php">
+        <div class="mb-3 d-flex justify-content-between align-items-center">
+            <div>
+                <button type="submit" name="accion" value="restaurar" class="btn btn-success me-2">🔄 Restaurar seleccionados</button>
+                <button type="submit" name="accion" value="eliminar" class="btn btn-danger" onclick="return confirm('¿Estás seguro de vaciar la papelera? Esta acción no se puede deshacer.');">🗑 Vaciar papelera</button>
             </div>
-        <?php endforeach; ?>
-    </div>
+        </div>
+
+        <div class="row g-4">
+            <?php foreach ($deletedFiles as $file): ?>
+                <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                    <div class="card bg-white position-relative h-100 text-center p-2">
+                        <input type="checkbox" name="ids[]" value="<?= $file['id'] ?>" class="form-check-input checkbox-top">
+                        <img src="<?= getFileIcon($file['name']) ?>" alt="icono" class="file-icon mx-auto mt-3">
+                        <div class="card-body">
+                            <div class="file-name" title="<?= htmlspecialchars($file['name']) ?>">
+                                <?= htmlspecialchars($file['name']) ?>
+                            </div>
+                            <div class="text-muted small mt-1">
+                                <?= date('d/m/Y H:i', strtotime($file['created_at'])) ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </form>
+</div>
+
 </body>
 </html>
