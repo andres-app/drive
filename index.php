@@ -24,63 +24,59 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["new_folder"])) {
 }
 
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_FILES["files"])) {
-    $uploadDir = "uploads/" . ($currentFolder ? $currentFolder . '/' : '');
-
-    if (!is_dir($uploadDir)) {
-        mkdir($uploadDir, 0777, true);
-    }
-
-    foreach ($_FILES["files"]["name"] as $key => $fileName) {
+    foreach ($_FILES["files"]["name"] as $key => $fullName) {
         $fileTmp = $_FILES["files"]["tmp_name"][$key];
         $fileSize = $_FILES["files"]["size"][$key];
+        $cleanPath = str_replace(['../', './'], '', $fullName);
+        $segments = explode('/', $cleanPath);
+        $fileName = array_pop($segments);
 
-        $relativePath = $_FILES["files"]["name"][$key];
-        $relativePath = str_replace(['../', './'], '', $relativePath);
-        $fullPath = $uploadDir . $relativePath;
-        $folderPath = dirname($relativePath);
+        $parent = $currentFolder;
 
-        if (!empty($folderPath)) {
-            $segments = explode('/', $folderPath);
-            $parent = $currentFolder;
-            $pathBuilder = $uploadDir;
+        // Crear cada carpeta del path (si no existe)
+        foreach ($segments as $folder) {
+            if ($folder === '' || $folder === '.') continue;
 
-            foreach ($segments as $folder) {
-                $pathBuilder .= $folder . '/';
-                if (!is_dir($pathBuilder)) {
-                    mkdir($pathBuilder, 0777, true);
-                }
-                $stmtCheck = $conn->prepare("SELECT COUNT(*) FROM files WHERE name = ? AND folder = ? AND user_id = ? AND size = 0");
-                $stmtCheck->execute([$folder, $parent, $userId]);
-                $exists = $stmtCheck->fetchColumn();
-
-                if (!$exists) {
-                    $stmtInsert = $conn->prepare("INSERT INTO files (name, path, size, folder, user_id) VALUES (?, '', 0, ?, ?)");
-                    $stmtInsert->execute([$folder, $parent, $userId]);
-                }
-                $parent = $folder;
+            $uploadPath = "uploads/" . ($parent ? $parent . '/' : '') . $folder;
+            if (!is_dir($uploadPath)) {
+                mkdir($uploadPath, 0777, true);
             }
+
+            // Revisar si ya está en base de datos
+            $stmt = $conn->prepare("SELECT COUNT(*) FROM files WHERE name = ? AND folder = ? AND user_id = ? AND size = 0");
+            $stmt->execute([$folder, $parent, $userId]);
+            $exists = $stmt->fetchColumn();
+
+            if (!$exists) {
+                $stmt = $conn->prepare("INSERT INTO files (name, path, size, folder, user_id) VALUES (?, '', 0, ?, ?)");
+                $stmt->execute([$folder, $parent, $userId]);
+            }
+
+            $parent = $folder; // profundiza a la siguiente subcarpeta
         }
 
-        $finalFolder = basename($folderPath);
-        if ($finalFolder === '.' || $finalFolder === '') {
-            $finalFolder = $currentFolder;
+        // Si no es un archivo válido, salta
+        if (!is_uploaded_file($fileTmp)) continue;
+
+        $finalFolder = $parent;
+        $uploadFilePath = "uploads/" . ($finalFolder ? $finalFolder . '/' : '') . $fileName;
+
+        if (!is_dir(dirname($uploadFilePath))) {
+            mkdir(dirname($uploadFilePath), 0777, true);
         }
 
-        if (is_uploaded_file($fileTmp)) {
-            if (!is_dir(dirname($fullPath))) {
-                mkdir(dirname($fullPath), 0777, true);
-            }
-
-            if (move_uploaded_file($fileTmp, $fullPath)) {
-                $stmt = $conn->prepare("INSERT INTO files (name, path, size, folder, user_id) VALUES (?, ?, ?, ?, ?)");
-                $stmt->execute([basename($fileName), $fullPath, $fileSize, $finalFolder, $userId]);
-            }
+        if (move_uploaded_file($fileTmp, $uploadFilePath)) {
+            $stmt = $conn->prepare("INSERT INTO files (name, path, size, folder, user_id) VALUES (?, ?, ?, ?, ?)");
+            $stmt->execute([$fileName, $uploadFilePath, $fileSize, $finalFolder, $userId]);
         }
     }
 
     header("Location: ?folder=$currentFolder");
     exit();
 }
+
+
+
 
 function getAllSubfolders($conn, $userId, $parentFolder)
 {
@@ -109,16 +105,16 @@ $fecha = $_GET['fecha'] ?? '';
 if ($search !== '') {
     $folders = getAllSubfolders($conn, $userId, $currentFolder);
     $placeholders = implode(',', array_fill(0, count($folders), '?'));
-    
+
     $conditions = [
         "folder IN ($placeholders)",
         "user_id = ?",
         "activo = 1",
         "name LIKE ?"
     ];
-    
+
     $params = array_merge($folders, [$userId, '%' . $search . '%']);
-    
+
     // Filtro por tipo de archivo
     if ($type === 'image') {
         $conditions[] = "LOWER(name) REGEXP '\\.(jpg|jpeg|png|gif)$'";
@@ -132,7 +128,7 @@ if ($search !== '') {
     if ($type === 'folder') {
         $conditions[] = "size = 0";
     }
-    
+
     // Filtro por fecha
     if ($fecha === 'hoy') {
         $conditions[] = "DATE(created_at) = CURDATE()";
@@ -143,11 +139,10 @@ if ($search !== '') {
     if ($fecha === 'mes') {
         $conditions[] = "MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE())";
     }
-    
+
     $query = "SELECT * FROM files WHERE " . implode(" AND ", $conditions) . " ORDER BY size = 0 DESC, name ASC";
     $stmt = $conn->prepare($query);
     $stmt->execute($params);
-
 } else {
     $stmt = $conn->prepare("SELECT * FROM files WHERE folder = ? AND user_id = ? AND activo = 1 ORDER BY size = 0 DESC, name ASC");
     $stmt->execute([$currentFolder, $userId]);
@@ -189,6 +184,7 @@ function getFileIcon($fileName)
     <title>Mi Drive</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <style>
         body {
             background-color: #f9fbfc;
@@ -325,11 +321,17 @@ function getFileIcon($fileName)
     <div class="sidebar">
         <h2>📂 Mi Drive</h2>
         <div class="d-flex justify-content-center">
-            <form method="POST" class="d-flex align-items-center gap-2 w-100">
-                <input type="text" name="new_folder" class="form-control" placeholder="Nueva carpeta" required>
-                <button type="submit" class="btn btn-sm d-flex align-items-center justify-content-center" style="height: 100%; aspect-ratio: 1 / 1; padding: 0;">+</button>
+            <form method="POST" class="d-flex gap-2 w-100 align-items-center">
+                <input type="text" name="new_folder" class="form-control h-100 py-2" style="height: 38px;" placeholder="Nueva carpeta" required>
+                <button type="submit" class="btn btn-primary d-flex align-items-center justify-content-center px-3" style="height: 38px; border-radius: 0.375rem;">
+                    <i class="bi bi-folder-plus"></i>
+                </button>
             </form>
         </div>
+
+
+
+
         <button type="button" class="btn btn-sm w-100 modal-option" data-bs-toggle="modal" data-bs-target="#uploadModal">📄 Subir archivo</button>
         <div class="mt-auto">
             <a href="trash.php" class="btn btn-sm btn-outline-danger mt-2 w-100">🗑 Ver papelera</a>
@@ -344,36 +346,39 @@ function getFileIcon($fileName)
         <?php if ($currentFolder): ?>
             <a href="?folder=" class="btn btn-warning mb-3">⬅ Volver</a>
         <?php endif; ?>
-        <form method="GET" class="mb-4 row g-2 align-items-center" role="search">
-            <input type="hidden" name="folder" value="<?= htmlspecialchars($currentFolder) ?>">
+        <div class="sticky-top bg-white py-3" style="z-index: 1020; border-bottom: 1px solid #dee2e6;">
+            <form method="GET" class="row g-2 align-items-center mb-0 px-2" role="search">
+                <input type="hidden" name="folder" value="<?= htmlspecialchars($currentFolder) ?>">
 
-            <div class="col-md-4">
-                <input type="text" name="search" class="form-control" placeholder="Buscar archivos o carpetas..." value="<?= htmlspecialchars($search ?? '') ?>">
-            </div>
+                <div class="col-md-4">
+                    <input type="text" name="search" class="form-control" placeholder="Buscar archivos o carpetas..." value="<?= htmlspecialchars($search ?? '') ?>">
+                </div>
 
-            <div class="col-md-2">
-                <select name="type" class="form-select">
-                    <option value="">Todos</option>
-                    <option value="image" <?= $_GET['type'] == 'image' ? 'selected' : '' ?>>Imágenes</option>
-                    <option value="doc" <?= $_GET['type'] == 'doc' ? 'selected' : '' ?>>Documentos</option>
-                    <option value="media" <?= $_GET['type'] == 'media' ? 'selected' : '' ?>>Audio/Video</option>
-                    <option value="folder" <?= $_GET['type'] == 'folder' ? 'selected' : '' ?>>Carpetas</option>
-                </select>
-            </div>
+                <div class="col-md-2">
+                    <select name="type" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="image" <?= $type == 'image' ? 'selected' : '' ?>>Imágenes</option>
+                        <option value="doc" <?= $type == 'doc' ? 'selected' : '' ?>>Documentos</option>
+                        <option value="media" <?= $type == 'media' ? 'selected' : '' ?>>Audio/Video</option>
+                        <option value="folder" <?= $type == 'folder' ? 'selected' : '' ?>>Carpetas</option>
+                    </select>
+                </div>
 
-            <div class="col-md-2">
-                <select name="fecha" class="form-select">
-                    <option value="">Cualquier fecha</option>
-                    <option value="hoy" <?= $_GET['fecha'] == 'hoy' ? 'selected' : '' ?>>Hoy</option>
-                    <option value="semana" <?= $_GET['fecha'] == 'semana' ? 'selected' : '' ?>>Esta semana</option>
-                    <option value="mes" <?= $_GET['fecha'] == 'mes' ? 'selected' : '' ?>>Este mes</option>
-                </select>
-            </div>
+                <div class="col-md-2">
+                    <select name="fecha" class="form-select">
+                        <option value="">Cualquier fecha</option>
+                        <option value="hoy" <?= $fecha == 'hoy' ? 'selected' : '' ?>>Hoy</option>
+                        <option value="semana" <?= $fecha == 'semana' ? 'selected' : '' ?>>Esta semana</option>
+                        <option value="mes" <?= $fecha == 'mes' ? 'selected' : '' ?>>Este mes</option>
+                    </select>
+                </div>
 
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-outline-primary w-100">🔍 Buscar</button>
-            </div>
-        </form>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-outline-primary w-100">🔍 Buscar</button>
+                </div>
+            </form>
+        </div>
+
 
         <div class="grid-container">
             <?php foreach ($files as $file): ?>
@@ -390,7 +395,7 @@ function getFileIcon($fileName)
                         <?php
                         $highlightedName = htmlspecialchars($file['name']);
                         if ($search !== '') {
-                            
+
                             $highlightedName = preg_replace("/(" . preg_quote($search, '/') . ")/i", '<mark>$1</mark>', $highlightedName);
                         }
                         ?>
