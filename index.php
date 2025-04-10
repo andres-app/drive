@@ -200,11 +200,11 @@ function getFileIcon($fileName)
             top: 0;
             left: 0;
             padding: 2rem 1rem;
-            display: flex;
-            flex-direction: column;
             gap: 1.5rem;
             border-right: 1px solid #bbdefb;
+            z-index: 1040;
         }
+
 
         .sidebar h2 {
             font-size: 1.5rem;
@@ -314,40 +314,58 @@ function getFileIcon($fileName)
         #contextMenu {
             width: 150px;
         }
+
+        @media (max-width: 768px) {
+            .main-content {
+                margin-left: 0 !important;
+                padding: 1rem;
+            }
+
+            .grid-container {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                gap: 15px;
+            }
+
+            .grid-item img {
+                width: 50px;
+                height: 50px;
+            }
+        }
     </style>
 </head>
 
 <body>
-    <div class="sidebar">
-        <h2>📂 Mi Drive</h2>
-        <div class="d-flex justify-content-center">
-            <form method="POST" class="d-flex gap-2 w-100 align-items-center">
-                <input type="text" name="new_folder" class="form-control h-100 py-2" style="height: 38px;" placeholder="Nueva carpeta" required>
-                <button type="submit" class="btn btn-primary d-flex align-items-center justify-content-center px-3" style="height: 38px; border-radius: 0.375rem;">
-                    <i class="bi bi-folder-plus"></i>
-                </button>
-            </form>
+    <!-- Sidebar escritorio -->
+    <div class="sidebar d-none d-md-flex flex-column">
+        <?php include 'sidebar_content.php'; ?>
+    </div>
+
+    <!-- Botón para móviles -->
+    <nav class="navbar navbar-light bg-light d-md-none px-3">
+        <button class="btn btn-outline-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarCanvas" aria-label="Abrir menú">
+            <i class="bi bi-list" style="font-size: 1.5rem;"></i>
+        </button>
+    </nav>
+
+
+    <!-- Sidebar móvil -->
+    <div class="offcanvas offcanvas-start d-md-none" tabindex="-1" id="sidebarCanvas">
+        <div class="offcanvas-header">
+
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
         </div>
-
-
-
-
-        <button type="button" class="btn btn-sm w-100 modal-option" data-bs-toggle="modal" data-bs-target="#uploadModal">📄 Subir archivo</button>
-        <div class="mt-auto">
-            <a href="trash.php" class="btn btn-sm btn-outline-danger mt-2 w-100">🗑 Ver papelera</a>
-
-            <hr class="bg-light">
-            <p class="mb-1">👤 <?php echo htmlspecialchars($_SESSION['username']); ?></p>
-            <a href="logout.php" class="btn btn-sm btn-warning mt-1 w-100">Cerrar sesión</a>
+        <div class="offcanvas-body">
+            <?php include 'sidebar_content.php'; ?>
         </div>
     </div>
 
-    <div class="main-content">
+
+    <div class="main-content" style="margin-left: 270px;" id="mainContent">
         <?php if ($currentFolder): ?>
             <a href="?folder=" class="btn btn-warning mb-3">⬅ Volver</a>
         <?php endif; ?>
         <div class="sticky-top bg-white py-3" style="z-index: 1020; border-bottom: 1px solid #dee2e6;">
-            <form method="GET" class="row g-2 align-items-center mb-0 px-2" role="search">
+            <form method="GET" class="row g-2 align-items-start mb-0 px-2" role="search">
                 <input type="hidden" name="folder" value="<?= htmlspecialchars($currentFolder) ?>">
 
                 <div class="col-md-4">
