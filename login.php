@@ -26,60 +26,138 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <title>Login - Mi Drive</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <!-- Tipografía moderna -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap + Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
     <style>
+        :root {
+            --bg-color: #f8fafc;
+            --box-color: #ffffff;
+            --text-color: #1f2937;
+            --input-bg: #f1f5f9;
+            --input-border: #cbd5e1;
+            --btn-bg: #3b82f6;
+            --btn-hover: #2563eb;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #121212;
+                --box-color: #1e1e1e;
+                --text-color: #f3f4f6;
+                --input-bg: #2c2c2c;
+                --input-border: #444;
+                --btn-bg: #3b82f6;
+                --btn-hover: #2563eb;
+            }
+        }
+
         body {
-            background-color: #121212;
-            color: white;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Outfit', sans-serif;
+            min-height: 100vh;
             display: flex;
-            justify-content: center;
             align-items: center;
-            height: 100vh;
+            justify-content: center;
+            padding: 1rem;
         }
+
         .login-box {
-            background-color: #1e1e1e;
-            padding: 30px;
-            border-radius: 10px;
-            width: 100%;
+            background-color: var(--box-color);
+            padding: 2rem;
+            border-radius: 16px;
             max-width: 400px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.3);
+            width: 100%;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.08);
         }
+
         .form-control {
-            background-color: #2c2c2c;
-            color: white;
-            border: 1px solid #444;
+            background-color: var(--input-bg);
+            border: 1px solid var(--input-border);
+            padding: 0.75rem;
+            border-radius: 12px;
+            color: var(--text-color);
+            font-size: 1rem;
         }
+
         .form-control:focus {
-            border-color: #666;
-            background-color: #2c2c2c;
+            border-color: var(--btn-bg);
+            box-shadow: 0 0 0 0.15rem rgba(59, 130, 246, 0.25);
+        }
+
+        .btn-login {
+            background-color: var(--btn-bg);
             color: white;
-        }
-        .btn-dark {
-            background-color: #333;
+            font-weight: 600;
+            padding: 0.75rem;
             border: none;
+            border-radius: 12px;
+            transition: background-color 0.2s ease;
         }
-        .btn-dark:hover {
-            background-color: #444;
+
+        .btn-login:hover {
+            background-color: var(--btn-hover);
+        }
+
+        .form-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+        }
+
+        .form-group {
+            position: relative;
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group input {
+            padding-left: 2.5rem;
+        }
+
+        .text-center small {
+            font-size: 0.85rem;
+            color: #9ca3af;
         }
     </style>
 </head>
 <body>
+
     <div class="login-box">
         <h3 class="text-center mb-4">🔐 Iniciar sesión</h3>
+
         <?php if (isset($error)): ?>
-            <div class="alert alert-danger p-2 text-center" role="alert">
-                <?php echo $error; ?>
+            <div class="alert alert-danger text-center py-2">
+                <?= htmlspecialchars($error) ?>
             </div>
         <?php endif; ?>
-        <form method="POST">
-            <div class="mb-3">
+
+        <form method="POST" autocomplete="off">
+            <div class="form-group">
+                <i class="bi bi-person-fill form-icon"></i>
                 <input type="text" name="username" class="form-control" placeholder="Usuario" required>
             </div>
-            <div class="mb-3">
+
+            <div class="form-group">
+                <i class="bi bi-lock-fill form-icon"></i>
                 <input type="password" name="password" class="form-control" placeholder="Contraseña" required>
             </div>
-            <button type="submit" class="btn btn-dark w-100">Entrar</button>
+
+            <button type="submit" class="btn btn-login w-100">Entrar</button>
         </form>
+
+        <div class="text-center mt-3">
+            <small>© <?= date('Y') ?> Mi Drive</small>
+        </div>
     </div>
+
 </body>
 </html>

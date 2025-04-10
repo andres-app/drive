@@ -192,6 +192,9 @@ function getFileIcon($fileName)
         }
 
         .sidebar {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; /* opcional si usas h-100 + mt-auto */
             width: 250px;
             height: 100vh;
             background-color: #e3f2fd;
