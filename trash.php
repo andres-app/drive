@@ -42,33 +42,55 @@ function getFileIcon($fileName)
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Papelera</title>
+    <title>Papelera - Mi Drive</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <style>
         body {
-            background-color: #f8f9fa;
+            background-color: #f4f6f8;
+            font-family: 'Segoe UI', sans-serif;
+            color: #333;
         }
 
-        .card {
-            border: none;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        .container {
+            max-width: 1200px;
         }
 
-        .card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+        .file-card {
+            background-color: #fff;
+            border-radius: 16px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s ease-in-out;
+            padding: 20px 10px;
+            text-align: center;
+            height: 100%;
+            position: relative;
         }
 
-        .file-icon {
-            width: 50px;
-            height: 50px;
+        .file-card:hover {
+            transform: scale(1.02);
+        }
+
+        .file-card img {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
         }
 
         .file-name {
             font-weight: 500;
+            font-size: 0.95rem;
+            margin-top: 12px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+        }
+
+        .file-date {
+            font-size: 0.75rem;
+            color: #888;
+            margin-top: 4px;
         }
 
         .checkbox-top {
@@ -77,38 +99,54 @@ function getFileIcon($fileName)
             left: 10px;
         }
 
-        .card-body {
-            padding-top: 1rem;
+        .top-actions {
+            background-color: #fff;
+            padding: 15px 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            border-radius: 10px;
+            font-weight: 500;
+        }
+
+        .btn i {
+            margin-right: 6px;
         }
     </style>
 </head>
 <body>
 
-<div class="container py-4">
-    <a href="index.php" class="btn btn-outline-secondary mb-4">⬅ Volver al inicio</a>
-    <h3 class="mb-4">🗑 Archivos en papelera</h3>
+<div class="container py-5">
+    <a href="index.php" class="btn btn-outline-secondary mb-4"><i class="bi bi-arrow-left"></i> Volver al inicio</a>
+    <h3 class="mb-4 fw-semibold">🗑 Archivos en papelera</h3>
 
     <form method="POST" action="acciones_papelera.php">
-        <div class="mb-3 d-flex justify-content-between align-items-center">
+        <div class="top-actions d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
             <div>
-                <button type="submit" name="accion" value="restaurar" class="btn btn-success me-2">🔄 Restaurar seleccionados</button>
-                <button type="submit" name="accion" value="eliminar" class="btn btn-danger" onclick="return confirm('¿Estás seguro de vaciar la papelera? Esta acción no se puede deshacer.');">🗑 Vaciar papelera</button>
+                <button type="submit" name="accion" value="restaurar" class="btn btn-success me-2">
+                    <i class="bi bi-arrow-counterclockwise"></i> Restaurar seleccionados
+                </button>
+                <button type="submit" name="accion" value="eliminar" class="btn btn-danger"
+                    onclick="return confirm('¿Estás seguro de vaciar la papelera? Esta acción no se puede deshacer.');">
+                    <i class="bi bi-trash-fill"></i> Vaciar papelera
+                </button>
             </div>
         </div>
 
-        <div class="row g-4">
+        <div class="row g-4 mt-2">
             <?php foreach ($deletedFiles as $file): ?>
                 <div class="col-6 col-sm-4 col-md-3 col-lg-2">
-                    <div class="card bg-white position-relative h-100 text-center p-2">
+                    <div class="file-card">
                         <input type="checkbox" name="ids[]" value="<?= $file['id'] ?>" class="form-check-input checkbox-top">
-                        <img src="<?= getFileIcon($file['name']) ?>" alt="icono" class="file-icon mx-auto mt-3">
-                        <div class="card-body">
-                            <div class="file-name" title="<?= htmlspecialchars($file['name']) ?>">
-                                <?= htmlspecialchars($file['name']) ?>
-                            </div>
-                            <div class="text-muted small mt-1">
-                                <?= date('d/m/Y H:i', strtotime($file['created_at'])) ?>
-                            </div>
+                        <img src="<?= getFileIcon($file['name']) ?>" alt="icono">
+                        <div class="file-name" title="<?= htmlspecialchars($file['name']) ?>">
+                            <?= htmlspecialchars($file['name']) ?>
+                        </div>
+                        <div class="file-date">
+                            <?= date('d/m/Y H:i', strtotime($file['created_at'])) ?>
                         </div>
                     </div>
                 </div>
